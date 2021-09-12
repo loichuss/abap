@@ -1,0 +1,93 @@
+*&---------------------------------------------------------------------*
+*& Report  ZWAR08_RAPORT_SD
+*&
+*&---------------------------------------------------------------------*
+*& Raport faktur SD
+*& Natalia Huss
+*& (mój adres mailowy)
+*&---------------------------------------------------------------------*
+
+REPORT zy_war08_raport_sd.
+
+TABLES vbrk.
+
+DATA:
+      gt_vbrk TYPE TABLE OF vbrk,
+      gt_vbrk2 TYPE TABLE OF zsnh_sd_structure,
+      gr_alv TYPE REF TO cl_salv_table.
+
+SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE text-001.
+PARAMETERS p_bukrs LIKE vbrk-bukrs MEMORY ID buk. " wtedy domyslnie jako LE wyświetli sie np. 1000, zalezy co w su3 w default ustawione
+SELECT-OPTIONS s_vbeln FOR vbrk-vbeln.
+SELECTION-SCREEN END OF BLOCK b01.
+
+SELECTION-SCREEN BEGIN OF BLOCK b02 WITH FRAME TITLE text-002.
+PARAMETERS p_rg1 RADIOBUTTON GROUP rg1.
+PARAMETERS p_rg2 RADIOBUTTON GROUP rg1 default 'X'.
+SELECTION-SCREEN END OF BLOCK b02.
+
+INCLUDE zy_war08_dap_sd_f01.
+
+START-OF-SELECTION.
+  PERFORM get_data.
+
+END-OF-SELECTION.
+  IF ( gt_vbrk[] IS NOT INITIAL AND p_rg1 EQ 'X' ) OR ( gt_vbrk2[] IS NOT INITIAL AND p_rg2 EQ 'X' ). " nawias żeby pokazać, że odwołuje się do zawartości twb wewn a nie do naglowka
+    PERFORM show_data.
+  ELSE.
+    MESSAGE 'Brak danych dla podanych parametrów selekcji' TYPE 'I'.
+  ENDIF.
+
+
+*&---------------------------------------------------------------------*
+*&  Include           ZY_WAR08_DAP_SD_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Form  GET_DATA
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM get_data .
+  IF p_rg1 EQ 'X'.
+    SELECT * FROM vbrk INTO TABLE gt_vbrk
+      WHERE vbeln IN s_vbeln AND bukrs EQ p_bukrs.
+  ELSE.
+    SELECT * FROM vbrk INTO CORRESPONDING FIELDS OF TABLE gt_vbrk2
+      WHERE vbeln IN s_vbeln AND bukrs EQ p_bukrs.
+  ENDIF.
+ENDFORM.                    " GET_DATA
+*&---------------------------------------------------------------------*
+*&      Form  SHOW_DATA
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM show_data .
+  TRY.
+      IF p_rg1 EQ 'X'.
+        CALL METHOD cl_salv_table=>factory
+          IMPORTING
+            r_salv_table = gr_alv
+          CHANGING
+            t_table      = gt_vbrk.
+      ELSE.
+        CALL METHOD cl_salv_table=>factory
+          IMPORTING
+            r_salv_table = gr_alv
+          CHANGING
+            t_table      = gt_vbrk2.
+      ENDIF.
+    CATCH cx_salv_msg .
+  ENDTRY.
+
+  IF gr_alv IS NOT INITIAL.
+    CALL METHOD gr_alv->display.
+
+  ENDIF.
+
+ENDFORM.                    " SHOW_DATA
