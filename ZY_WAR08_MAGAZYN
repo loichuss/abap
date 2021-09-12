@@ -1,0 +1,170 @@
+*&---------------------------------------------------------------------*
+*& Report  ZY_WAR08_MAGAZYN
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT zy_war08_magazyn.
+TYPES: BEGIN OF ts_towar,
+  id TYPE i,
+  nazwa TYPE string,
+  cena TYPE p DECIMALS 2,
+  waga TYPE p DECIMALS 2,
+  kolor TYPE string,
+END OF ts_towar.
+
+TYPES tt_towary TYPE STANDARD TABLE OF ts_towar.
+
+DATA: gt_towary TYPE tt_towary,
+      gs_towar TYPE ts_towar,
+      gv_suma_ceny TYPE p DECIMALS 2,
+      gv_suma_wagi TYPE p DECIMALS 2,
+      gv_kpi TYPE p DECIMALS 2.
+
+* Zadanie 1
+PERFORM przyjmij_na_magazyn USING '5' 'czarny' CHANGING gt_towary.
+PERFORM przyjmij_na_magazyn USING '5' 'czerwony' CHANGING gt_towary.
+WRITE: 'Zadanie pierwsze: przyjmij 10 produktow.', /.
+PERFORM wydrukuj_liste_produktow USING gt_towary.
+
+* Zadanie 2
+PERFORM zmiana_ceny_towaru USING '400.00' '2' CHANGING gt_towary.
+WRITE: 'Zadanie drugie: zmodyfikuj cene drugiego towaru.', /.
+PERFORM wydrukuj_liste_produktow USING gt_towary.
+
+* Zadanie 3
+PERFORM usun_produkt USING '3' CHANGING gt_towary.
+WRITE: 'Zadanie trzecie: wydaj 3. produkt (usun go z listy produktow).', /.
+PERFORM wydrukuj_liste_produktow USING gt_towary.
+
+* Zadanie 4
+PERFORM sumuj_ceny USING gt_towary CHANGING gv_suma_ceny.
+WRITE: 'Zadanie czwarte: zsumuj wartosc produktow w magazynie.', /.
+WRITE: / gv_suma_ceny, /.
+
+* Zadanie 5
+PERFORM przecen_produkt USING 'czerwony' '0.10' CHANGING gt_towary.
+WRITE: 'Zadanie piate: przecen produkt o wybranym kolorze.', /.
+PERFORM wydrukuj_liste_produktow USING gt_towary.
+
+* Zadanie 6
+PERFORM sumuj_ceny USING gt_towary CHANGING gv_suma_ceny.
+WRITE: 'Zadanie szoste: zsumuj wartosc produktow w magazynie.', /.
+WRITE: / gv_suma_ceny, /.
+
+* Zadanie 7
+PERFORM sumuj_wage USING gt_towary CHANGING gv_suma_wagi.
+WRITE: 'Zadanie siodme: zsumuj wage produktow w magazynie.', /.
+WRITE: / gv_suma_wagi, /.
+
+* Zadanie 8
+WRITE: 'Zadanie osme: policz stosunek waga/cena dla kazdego produktu.', /.
+PERFORM policz_kpi USING gt_towary CHANGING gv_kpi.
+
+
+FORM przyjmij_na_magazyn
+                      USING    iv_ile_produktow TYPE i
+                               iv_kolor TYPE string
+                      CHANGING ct_towary TYPE tt_towary.
+
+  DATA: ls_tmp TYPE ts_towar,
+        lv_stala_id TYPE i VALUE 1,
+        lv_stala_cena TYPE p DECIMALS 2 VALUE 100,
+        lv_stala_waga TYPE p DECIMALS 2 VALUE 10.
+
+  DO iv_ile_produktow TIMES.
+    ls_tmp-id = lv_stala_id.
+    ls_tmp-nazwa = iv_kolor && '-' && lv_stala_id.
+    ls_tmp-cena = lv_stala_cena.
+    ls_tmp-waga = lv_stala_waga.
+    ls_tmp-kolor = iv_kolor.
+    APPEND ls_tmp TO ct_towary.
+    lv_stala_id = lv_stala_id + 1.
+    lv_stala_cena = lv_stala_cena + 10.
+    lv_stala_waga = lv_stala_waga + 2.
+  ENDDO.
+ENDFORM.
+
+FORM wydrukuj_liste_produktow
+                    USING it_lista_produktow TYPE tt_towary.
+
+  DATA ls_tmp TYPE ts_towar.
+
+  LOOP AT it_lista_produktow INTO ls_tmp.
+    WRITE: / ls_tmp-id, ls_tmp-nazwa, ls_tmp-cena, ls_tmp-waga, ls_tmp-kolor, /.
+  ENDLOOP.
+ENDFORM.
+
+FORM zmiana_ceny_towaru
+                    USING    iv_nowa_cena TYPE p
+                             iv_index TYPE i
+                    CHANGING ct_towary TYPE tt_towary.
+
+  DATA: ls_tmp TYPE ts_towar.
+
+  ls_tmp-cena = iv_nowa_cena.
+
+  MODIFY ct_towary FROM ls_tmp INDEX iv_index TRANSPORTING ('cena').
+ENDFORM.
+
+FORM usun_produkt
+                    USING    iv_index TYPE i
+                    CHANGING ct_towary TYPE tt_towary.
+
+  DELETE ct_towary INDEX iv_index.
+ENDFORM.
+
+FORM sumuj_ceny
+                    USING    it_towary TYPE tt_towary
+                    CHANGING cv_suma_ceny TYPE p.
+
+  DATA ls_tmp TYPE ts_towar.
+
+  cv_suma_ceny = 0.
+
+  LOOP AT it_towary INTO ls_tmp.
+    cv_suma_ceny = cv_suma_ceny + ls_tmp-cena.
+  ENDLOOP.
+ENDFORM.
+
+FORM przecen_produkt
+                  USING    iv_kolor TYPE string
+                           iv_rabat TYPE p
+                  CHANGING ct_towary TYPE tt_towary.
+
+  DATA ls_tmp TYPE ts_towar.
+
+  LOOP AT ct_towary INTO ls_tmp.
+    IF ls_tmp-kolor = iv_kolor.
+      ls_tmp-cena = ls_tmp-cena * ( 1 - iv_rabat ).
+      MODIFY ct_towary FROM ls_tmp.
+    ENDIF.
+  ENDLOOP.
+ENDFORM.
+
+FORM sumuj_wage
+                    USING    it_towary TYPE tt_towary
+                    CHANGING cv_suma_wagi TYPE p.
+
+  DATA ls_tmp TYPE ts_towar.
+
+  cv_suma_wagi = 0.
+
+  LOOP AT it_towary INTO ls_tmp.
+    cv_suma_wagi = cv_suma_wagi + ls_tmp-waga.
+  ENDLOOP.
+ENDFORM.
+
+FORM policz_kpi
+                  USING    it_towary TYPE tt_towary
+                  CHANGING cv_kpi TYPE p.
+
+  DATA ls_tmp TYPE ts_towar.
+
+  LOOP AT it_towary INTO ls_tmp.
+    cv_kpi = ls_tmp-waga / ls_tmp-cena.
+    WRITE / cv_kpi .
+  ENDLOOP.
+ENDFORM.
