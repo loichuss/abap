@@ -1,0 +1,172 @@
+*&---------------------------------------------------------------------*
+*& Report  ZY_WAR08_ALV04
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT zy_war08_alv04.
+
+TYPES: BEGIN OF ty_ekpo,
+  ebeln TYPE ekpo-ebeln,
+  ebelp TYPE ekpo-ebelp,
+  matnr TYPE ekpo-matnr,
+  menge TYPE ekpo-menge,
+  END OF ty_ekpo.
+
+DATA: gt_ekpo TYPE TABLE OF ty_ekpo.
+
+DATA: g_container TYPE scrfname VALUE 'ALV_CONT',
+      g_custom_cont TYPE REF TO cl_gui_custom_container,
+      grid TYPE REF TO cl_gui_alv_grid.
+
+DATA: ok_code TYPE sy-ucomm,
+      ok_code2 TYPE sy-ucomm.
+
+CLASS lcl_event_receiver DEFINITION DEFERRED.
+CLASS lcl_event_receiver DEFINITION.
+  PUBLIC SECTION.
+    METHODS:
+    handle_toolbar FOR EVENT toolbar OF cl_gui_alv_grid IMPORTING e_object e_interactive,
+    handle_user_command FOR EVENT user_command OF cl_gui_alv_grid IMPORTING e_ucomm,
+      handle_double_click FOR EVENT double_click OF cl_gui_alv_grid IMPORTING e_row e_column es_row_no.
+ENDCLASS.
+
+CLASS lcl_event_receiver IMPLEMENTATION.
+  METHOD handle_toolbar.
+    DATA: ls_toolbar TYPE stb_button.
+    CLEAR ls_toolbar.
+    MOVE 'KLIK' TO ls_toolbar-function.
+    ls_toolbar-text = 'Przycisk'.
+    MOVE icon_deselect_all TO ls_toolbar-icon.
+    MOVE 'Przycisk'(111) TO ls_toolbar-quickinfo.
+    MOVE ' ' TO ls_toolbar-disabled.
+    APPEND ls_toolbar TO e_object->mt_toolbar.
+  ENDMETHOD.
+  METHOD handle_user_command.
+    CASE e_ucomm.
+      WHEN 'KLIK'.
+        MESSAGE 'Naciśnięto przycisk' TYPE 'I'.
+    ENDCASE.
+  ENDMETHOD.
+  METHOD handle_double_click.
+  ENDMETHOD.
+ENDCLASS.
+
+DATA: event_receiver TYPE REF TO lcl_event_receiver.
+
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0100  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE status_0100 OUTPUT.
+  SET PF-STATUS 'STATUS_ALV'.
+*  SET TITLEBAR 'xxx'.
+
+  IF g_custom_cont IS INITIAL.
+    CREATE OBJECT g_custom_cont
+      EXPORTING
+        container_name = g_container.
+
+    CREATE OBJECT grid
+      EXPORTING
+        i_parent = g_custom_cont.
+
+    DATA(t_fcat) = VALUE lvc_t_fcat( ( fieldname = 'EBELN' coltext = 'Dokument' outputlen = '10' col_pos = '1' )
+                                     ( fieldname = 'EBELP' coltext = 'Pozycja' outputlen = '6' col_pos = '2' )
+                                     ( fieldname = 'MATNR' coltext = 'Materiał' outputlen = '20' col_pos = '3' )
+                                     ( fieldname = 'MENGE' coltext = 'Ilość' outputlen = '15' col_pos = '4' ) ).
+
+    SELECT ekpo~ebeln ekpo~ebelp ekpo~matnr ekpo~menge INTO CORRESPONDING FIELDS OF TABLE gt_ekpo
+      FROM ekpo
+      WHERE ebeln = '3000000007'.
+
+    DATA(lt_exclude) = VALUE ui_functions( ( cl_gui_alv_grid=>mc_fc_detail )
+                                              ( cl_gui_alv_grid=>mc_fc_check )
+                                              ( cl_gui_alv_grid=>mc_fc_refresh )
+                                              ( cl_gui_alv_grid=>mc_fc_loc_cut )
+                                              ( cl_gui_alv_grid=>mc_fc_loc_copy )
+                                              ( cl_gui_alv_grid=>mc_mb_paste )
+                                              ( cl_gui_alv_grid=>mc_fc_loc_undo )
+                                              ( cl_gui_alv_grid=>mc_fc_loc_append_row )
+                                              ( cl_gui_alv_grid=>mc_fc_loc_insert_row )
+                                              ( cl_gui_alv_grid=>mc_fc_loc_delete_row )
+                                              ( cl_gui_alv_grid=>mc_fc_loc_copy_row )
+                                              ( cl_gui_alv_grid=>mc_mb_filter )
+                                              ( cl_gui_alv_grid=>mc_mb_sum )
+                                              ( cl_gui_alv_grid=>mc_mb_subtot )
+                                              ( cl_gui_alv_grid=>mc_fc_print_back )
+                                              ( cl_gui_alv_grid=>mc_mb_view )
+                                              ( cl_gui_alv_grid=>mc_mb_export )
+                                              ( cl_gui_alv_grid=>mc_fc_info )
+                                              ( cl_gui_alv_grid=>mc_fc_graph )
+                                              ( cl_gui_alv_grid=>mc_mb_variant ) ).
+
+    CALL METHOD grid->set_table_for_first_display
+      EXPORTING
+        it_toolbar_excluding = lt_exclude
+      CHANGING
+        it_fieldcatalog      = t_fcat
+        it_outtab            = gt_ekpo.
+
+    CREATE OBJECT event_receiver.
+    SET HANDLER event_receiver->handle_toolbar FOR grid.
+    SET HANDLER event_receiver->handle_user_command FOR grid.
+    SET HANDLER event_receiver->handle_double_click FOR grid.
+    CALL METHOD grid->set_toolbar_interactive.
+
+  ENDIF.
+
+ENDMODULE.                 " STATUS_0100  OUTPUT
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+  DATA: lv_ok_code TYPE sy-ucomm.
+
+  MOVE ok_code TO lv_ok_code.
+  CLEAR ok_code.
+  CASE lv_ok_code.
+    WHEN 'BACK' OR 'END' OR 'EXIT'.
+      LEAVE PROGRAM.
+    WHEN 'BPRESS'.
+*pobranie danych
+*przejście do drugiego ekranu
+      CALL SCREEN 0200.
+  ENDCASE.
+
+ENDMODULE.                 " USER_COMMAND_0100  INPUT
+
+START-OF-SELECTION.
+  CALL SCREEN 0100.
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0200  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE status_0200 OUTPUT.
+  SET PF-STATUS 'STATUS_0200'.
+*  SET TITLEBAR 'xxx'.
+
+ENDMODULE.                 " STATUS_0200  OUTPUT
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+
+  DATA: lv_ok_code2 TYPE sy-ucomm.
+  MOVE ok_code2 TO lv_ok_code2.
+  CLEAR ok_code2.
+  CASE lv_ok_code2.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0100.
+    WHEN 'END' OR 'EXIT'.
+      LEAVE PROGRAM.
+  ENDCASE.
+ENDMODULE.                 " USER_COMMAND_0200  INPUT
