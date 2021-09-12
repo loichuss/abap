@@ -92,3 +92,10 @@ FORM show_data .
     CALL METHOD gr_alv->display.
   ENDIF.
 ENDFORM.                    " SHOW_DATA
+
+*&---------------------------------------------------------------------*
+*&  Include           ZY_WAR08_RAPORT_MM_TOP
+*&---------------------------------------------------------------------*
+
+DATA: gt_data TYPE STANDARD TABLE OF zsnh_mm_structure,
+      gr_alv TYPE REF TO cl_salv_table.
