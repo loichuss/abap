@@ -1,0 +1,52 @@
+class ZCL_RACER_008 definition
+  public
+  inheriting from ZCL_VEHICLE_08
+  final
+  create public .
+
+public section.
+
+  methods CONSTRUCTOR .
+
+  methods DISPLAY
+    redefinition .
+protected section.
+private section.
+ENDCLASS.
+
+
+
+CLASS ZCL_RACER_008 IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_RACER_008->CONSTRUCTOR
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD constructor.
+    CALL METHOD super->constructor.
+    me->max_speed = 250.
+*    .
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_RACER_008->DISPLAY
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD display.
+*CALL METHOD SUPER->DISPLAY
+*
+*    DATA lv_msg TYPE string.
+*
+*    lv_msg = 'Racer ' && ', Speed = ' && |{ me->speed }| && ', Max-Speed = ' && |{ me->max_speed }|.
+*    MESSAGE lv_msg TYPE 'I'.
+
+    MESSAGE i002 WITH speed max_speed.
+
+*    DATA lv_msg TYPE string.
+*    lv_msg = 'Vehicle ' && |{ me->id }| && ', Speed = ' && |{ me->speed }| && ', Max-Speed = ' && |{ me->max_speed }|.
+*    MESSAGE lv_msg TYPE 'I'.
+
+  ENDMETHOD.
+ENDCLASS.
