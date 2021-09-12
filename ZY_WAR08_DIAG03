@@ -1,0 +1,87 @@
+*&---------------------------------------------------------------------*
+*& Report  ZY_WAR08_DIAG03
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT zy_war08_diag03.
+TABLES: mkpf.
+DATA: ok_code TYPE syucomm,
+      ok_code2 TYPE syucomm,
+      count TYPE string. "jak dałam integer to mi się dokumenty nie zliczały; dlaczego string?
+
+
+
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0100  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE status_0100 OUTPUT.
+  SET PF-STATUS 'STATUS'.
+  SET TITLEBAR 'Kontrola wydajności pracowników'.
+
+ENDMODULE.                 " STATUS_0100  OUTPUT
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+  DATA: lv_ok_code TYPE syucomm.
+
+  MOVE ok_code TO lv_ok_code.
+  CLEAR ok_code.
+
+  CASE lv_ok_code.
+    WHEN 'BACK' OR 'CANCEL' OR 'EXIT'.
+      LEAVE TO SCREEN 0.
+    WHEN 'PRESSN'.
+      CALL SCREEN 0200.
+  ENDCASE.
+ENDMODULE.                 " USER_COMMAND_0100  INPUT
+
+
+MODULE get_data INPUT.
+  IF mkpf-usnam <> '' AND mkpf-mjahr <> ''.
+    SELECT COUNT(*) INTO count FROM mkpf
+      WHERE usnam = mkpf-usnam
+        AND mjahr = mkpf-mjahr.
+
+  ENDIF.
+ENDMODULE.
+
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0200  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE status_0200 OUTPUT.
+  SET PF-STATUS 'STATUS_0200'.
+*  SET TITLEBAR 'xxx'.
+
+ENDMODULE.                 " STATUS_0200  OUTPUT
+
+
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+  DATA: lv_ok_code2 TYPE syucomm.
+
+  MOVE ok_code2 TO lv_ok_code2.
+  CLEAR ok_code2.
+  CASE lv_ok_code2.
+    WHEN 'B'.
+      CALL SCREEN 0100.
+    WHEN 'E' OR 'EX'.
+      LEAVE TO SCREEN 0.
+  ENDCASE.
+ENDMODULE.                 " USER_COMMAND_0200  INPUT
+
+START-OF-SELECTION.
+  CALL SCREEN 0100.
