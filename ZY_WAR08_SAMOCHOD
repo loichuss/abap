@@ -1,0 +1,84 @@
+CLASS zy_war08_samochod DEFINITION
+  PUBLIC
+  FINAL
+  CREATE PUBLIC .
+
+  PUBLIC SECTION.
+    METHODS set_marka IMPORTING im_marka TYPE string .
+    METHODS set_ilosc_siedzen IMPORTING im_ilosc_siedzen TYPE i .
+    METHODS set_id IMPORTING im_id TYPE i .
+    METHODS get_marka RETURNING VALUE(r_marka) TYPE string .
+    METHODS get_ilosc_siedzen RETURNING VALUE(r_ilosc_siedzen) TYPE i .
+    METHODS get_id RETURNING VALUE(r_id) TYPE i.
+  PROTECTED SECTION.
+  PRIVATE SECTION.
+
+    DATA id TYPE c .
+    DATA marka TYPE string .
+    DATA ilosc_siedzen TYPE i .
+ENDCLASS.
+
+
+
+CLASS ZY_WAR08_SAMOCHOD IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZY_WAR08_SAMOCHOD->GET_ID
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] R_ID                           TYPE        I
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_id.
+    r_id = id.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZY_WAR08_SAMOCHOD->GET_ILOSC_SIEDZEN
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] R_ILOSC_SIEDZEN                TYPE        I
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_ilosc_siedzen.
+    r_ilosc_siedzen = ilosc_siedzen.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZY_WAR08_SAMOCHOD->GET_MARKA
+* +-------------------------------------------------------------------------------------------------+
+* | [<-()] R_MARKA                        TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD get_marka.
+    r_marka = marka.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZY_WAR08_SAMOCHOD->SET_ID
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ID                          TYPE        I
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_id.
+    id = im_id.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZY_WAR08_SAMOCHOD->SET_ILOSC_SIEDZEN
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_ILOSC_SIEDZEN               TYPE        I
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_ilosc_siedzen.
+    ilosc_siedzen = im_ilosc_siedzen.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZY_WAR08_SAMOCHOD->SET_MARKA
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IM_MARKA                       TYPE        STRING
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD set_marka.
+    marka = im_marka.
+  ENDMETHOD.
+ENDCLASS.
