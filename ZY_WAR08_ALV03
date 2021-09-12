@@ -1,0 +1,88 @@
+*&---------------------------------------------------------------------*
+*& Report  ZY_WAR08_ALV03
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZY_WAR08_ALV03.
+
+
+TYPES: BEGIN OF ty_ekpo,
+         ebeln   TYPE ekpo-ebeln,
+         ebelp   TYPE ekpo-ebelp,
+         matnr   TYPE ekpo-matnr,
+         menge TYPE ekpo-menge,
+         t_color TYPE lvc_t_scol,
+       END OF ty_ekpo.
+
+DATA: lt_ekpo TYPE TABLE OF ty_ekpo,
+      lo_alv TYPE REF TO cl_salv_table,
+      ls_color TYPE lvc_s_scol.
+
+DATA: lo_funkcje TYPE REF TO cl_salv_functions_list,
+      lo_kolumny_tab TYPE REF TO cl_salv_columns_table.
+
+DATA: lo_naglowek TYPE REF TO cl_salv_form_layout_grid,
+      lo_n_linia_p TYPE REF TO cl_salv_form_label,
+      lo_n_linia TYPE REF TO cl_salv_form_layout_flow.
+
+DATA: lo_stopka TYPE REF TO cl_salv_form_layout_grid,
+      lo_s_linia_p TYPE REF TO cl_salv_form_label,
+      lo_s_linia TYPE REF TO cl_salv_form_layout_flow.
+
+SELECT ekpo~ebeln ekpo~ebelp ekpo~matnr ekpo~menge INTO CORRESPONDING FIELDS OF TABLE lt_ekpo
+  FROM ekpo
+  WHERE aedat >= '20200101'.
+
+CALL METHOD cl_salv_table=>factory
+  IMPORTING
+    r_salv_table = lo_alv
+  CHANGING
+    t_table      = lt_ekpo.
+
+lo_kolumny_tab = lo_alv->get_columns( ).
+
+LOOP AT lt_ekpo ASSIGNING FIELD-SYMBOL(<fs_ekpo>).
+  IF <fs_ekpo>-menge > '1000'.
+    CLEAR ls_color.
+    ls_color-fname = 'MATNR'.
+    ls_color-color-col = 6.
+    ls_color-color-int = 0.
+    APPEND ls_color TO <fs_ekpo>-t_color.
+  ENDIF.
+ENDLOOP.
+
+lo_kolumny_tab->set_color_column( 'T_COLOR' ).
+
+lo_funkcje = lo_alv->get_functions( ).
+lo_funkcje->set_default( abap_true ).
+
+*tworzenie nagłówka
+CREATE OBJECT lo_naglowek.
+*linia pogrubiona
+lo_n_linia_p = lo_naglowek->create_label( row = 1 column = 1 ).
+lo_n_linia_p->set_text( 'Nagłówek pogrubiony').
+*linia zwykła
+lo_n_linia = lo_naglowek->create_flow( row = 2 column = 1 ).
+lo_n_linia->create_text( text = 'Nagłówek zwykła linia ' ).
+
+*dodanie nagłówka do ALV
+lo_alv->set_top_of_list( lo_naglowek ).
+
+*tworzenie nagłówka
+CREATE OBJECT lo_stopka.
+*linia pogrubiona
+lo_s_linia_p = lo_stopka->create_label( row = 1 column = 1 ).
+lo_s_linia_p->set_text( 'Stopka pogrubiona ').
+*linia zwykla
+lo_s_linia = lo_stopka->create_flow( row = 2 column = 1 ).
+lo_s_linia->create_text( text = 'Stopka zwykla linia' ).
+
+*dodanie stopki do ALV
+lo_alv->set_end_of_list( lo_stopka ).
+
+
+*wyświetlenie ALV
+CALL METHOD lo_alv->display.
