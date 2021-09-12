@@ -1,0 +1,66 @@
+*&---------------------------------------------------------------------*
+*& Report  ZY_WAR08_ALV01
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT zy_war08_alv01.
+
+DATA: lt_ekpo TYPE TABLE OF ekpo,
+      lo_alv TYPE REF TO cl_salv_table.
+
+DATA: lo_funkcje TYPE REF TO cl_salv_functions_list.
+
+DATA: lo_naglowek TYPE REF TO cl_salv_form_layout_grid,
+      lo_n_linia_p TYPE REF TO cl_salv_form_label,
+      lo_n_linia TYPE REF TO cl_salv_form_layout_flow.
+
+DATA: lo_stopka TYPE REF TO cl_salv_form_layout_grid,
+      lo_s_linia_p TYPE REF TO cl_salv_form_label,
+      lo_s_linia TYPE REF TO cl_salv_form_layout_flow.
+
+SELECT * INTO TABLE lt_ekpo
+  FROM ekpo
+  WHERE aedat >= '20200101'.
+
+CALL METHOD cl_salv_table=>factory
+  IMPORTING
+    r_salv_table = lo_alv
+  CHANGING
+    t_table      = lt_ekpo.
+
+lo_funkcje = lo_alv->get_functions( ).
+lo_funkcje->set_default( abap_true ).
+
+*tworzenie nagłowka
+CREATE OBJECT lo_naglowek.
+
+*linia pogrubiona
+lo_n_linia_p = lo_naglowek->create_label( row = 1 column = 1 ).
+lo_n_linia_p->set_text('Nagłówek pogrubiony').
+
+*linia zwykła
+lo_n_linia = lo_naglowek->create_flow( row = 2 column = 1 ).
+lo_n_linia->create_text( text = 'Nagłówek zwykła linia' ).
+
+*dodanie nagłowka to ALV
+lo_alv->set_top_of_list( lo_naglowek ).
+
+*tworzenie stopki
+CREATE OBJECT lo_stopka.
+
+*stopka pogrubiona
+lo_s_linia_p = lo_stopka->create_label( row = 1 column = 1 ).
+lo_s_linia_p->set_text('Stopka pogrubiona').
+
+*stopka zwykła
+lo_s_linia = lo_stopka->create_flow( row = 2 column = 1 ).
+lo_s_linia->create_text( text = 'Stopka zwykła linia' ).
+
+*dodanie stopki to ALV
+lo_alv->set_end_of_list( lo_stopka ).
+
+*wyświetlenie ALV
+CALL METHOD lo_alv->display.
