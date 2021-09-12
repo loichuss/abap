@@ -1,0 +1,33 @@
+*&---------------------------------------------------------------------*
+*& Report  ZY_WAR08_V01
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT zy_war08_esterometro.
+
+* Include with global variables
+INCLUDE ZWAR08_TOP.
+
+* Include with local class definitions and implementations
+INCLUDE ZWAR08_LCL.
+
+* Include with selection screen (subscreen)
+INCLUDE ZWAR08_SEL.
+
+* PBO for first screen
+INCLUDE ZWAR08_STATUS_0100O01.
+
+* PAI for first screen
+INCLUDE ZWAR08_USER_COMMAN_0I01.
+
+* PBO for second screen
+INCLUDE ZWAR08_STATUS_0200O01.
+
+* PAI for second screen
+INCLUDE ZWAR08_USER_COMMAN_0I02.
+
+* Include with FORMs
+INCLUDE ZWAR08_F01.
