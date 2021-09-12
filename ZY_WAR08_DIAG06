@@ -1,0 +1,171 @@
+*&---------------------------------------------------------------------*
+*& Report  ZY_WAR08_DIAG06
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZY_WAR08_DIAG06.
+
+TABLES: mkpf, likp, ekko.
+DATA: ok_code TYPE syucomm,
+      ok_code2 TYPE syucomm,
+      doc_count TYPE string,
+      table_name TYPE string,
+      doc_nr TYPE string,
+      user_name TYPE string,
+      cr_date TYPE dats,
+      rb1 TYPE xfeld,
+      rb2 TYPE xfeld,
+      rb3 TYPE xfeld.
+
+rb1 = 'X'.
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0100  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE status_0100 OUTPUT.
+SET PF-STATUS 'STATUS_0100'.
+*  SET TITLEBAR 'xxx'.
+
+ENDMODULE.                 " STATUS_0100  OUTPUT
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+DATA: lv_ok_code TYPE syucomm.
+  MOVE ok_code TO lv_ok_code.
+  CLEAR ok_code.
+  CASE lv_ok_code.
+    WHEN 'BACK' OR 'END' OR 'EXIT'.
+      LEAVE PROGRAM.
+    WHEN 'PRESSN'.
+      CALL SCREEN 0200.
+    WHEN 'RB1'.
+
+  ENDCASE.
+ENDMODULE.                 " USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0200  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE status_0200 OUTPUT.
+SET PF-STATUS 'STATUS_0200'.
+*  SET TITLEBAR 'xxx'.
+
+ENDMODULE.                 " STATUS_0200  OUTPUT
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+DATA: lv_ok_code2 TYPE syucomm.
+  MOVE ok_code2 TO lv_ok_code2.
+  CLEAR ok_code2.
+  CASE lv_ok_code2.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0100.
+    WHEN 'END' OR 'EXIT'.
+      LEAVE PROGRAM.
+  ENDCASE.
+
+ENDMODULE.                 " USER_COMMAND_0200  INPUT
+
+MODULE modify_screen OUTPUT.
+  LOOP AT SCREEN.
+    IF rb1 = 'X'.
+      IF ( screen-group1 = 'EK' OR screen-group1 = 'LI' ) .
+        screen-input = '0'.
+        screen-invisible = '1'.
+      ENDIF.
+
+    ELSEIF rb2 = 'X'.
+      IF ( screen-group1 = 'EK' OR screen-group1 = 'MK' ) .
+        screen-input = '0'.
+        screen-invisible = '1'.
+      ENDIF.
+
+    ELSEIF rb3 = 'X'.
+      IF ( screen-group1 = 'MK' OR screen-group1 = 'LI' ) .
+        screen-input = '0'.
+        screen-invisible = '1'.
+      ENDIF.
+
+    ENDIF.
+    MODIFY SCREEN.
+  ENDLOOP.
+
+ENDMODULE.
+
+MODULE doc_count_a INPUT.
+
+  IF rb1 = 'X'.
+    table_name = 'MKPF'.
+    SELECT COUNT( * ) INTO doc_count FROM mkpf.
+  ELSEIF rb2 = 'X'.
+    table_name = 'LIKP'.
+    SELECT COUNT( * ) INTO doc_count FROM likp.
+  ELSEIF rb3 = 'X'.
+    table_name = 'EKKO'.
+    SELECT COUNT( * ) INTO doc_count FROM ekko.
+  ENDIF.
+
+ENDMODULE.
+
+MODULE get_details INPUT.
+
+
+  IF rb1 = 'X'.
+    doc_nr = mkpf-mblnr.
+    IF ( mkpf-mjahr IS NOT INITIAL AND mkpf-mblnr IS NOT INITIAL ).
+
+      SELECT SINGLE usnam INTO user_name FROM mkpf
+        WHERE mblnr = mkpf-mblnr.
+
+      SELECT SINGLE bldat INTO cr_date FROM mkpf
+       WHERE mblnr = mkpf-mblnr.
+
+    ENDIF.
+
+  ELSEIF rb2 = 'X'.
+
+    doc_nr = likp-vbeln.
+    IF ( likp-VBELN IS NOT INITIAL ).
+
+      SELECT SINGLE ernam INTO user_name FROM likp
+        WHERE vbeln = likp-vbeln.
+
+      SELECT SINGLE erdat INTO cr_date FROM likp
+       WHERE vbeln = likp-vbeln.
+
+    ENDIF.
+
+
+  ELSEIF rb3 = 'X'.
+
+    doc_nr = ekko-ebeln.
+    IF ( ekko-ebeln IS NOT INITIAL ).
+
+      SELECT SINGLE ernam INTO user_name FROM ekko
+        WHERE ebeln = ekko-ebeln.
+
+      SELECT SINGLE bedat INTO cr_date FROM ekko
+       WHERE ebeln = ekko-ebeln.
+
+    ENDIF.
+
+
+  ENDIF.
+
+
+ENDMODULE.
+
+
+START-OF-SELECTION.
+  CALL SCREEN 0100.
