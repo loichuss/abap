@@ -1,0 +1,166 @@
+class ZCL_APP_08 definition
+  public
+  final
+  create public .
+
+public section.
+
+  class-methods START .
+  class-methods START_BARKA .
+  class-methods START_HELIKOPTER .
+  class-methods START_EVENT .
+  class-methods START_EXCEPTION .
+protected section.
+private section.
+ENDCLASS.
+
+
+
+CLASS ZCL_APP_08 IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method ZCL_APP_08=>START
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD start.
+
+    DATA: lr_vehicle TYPE REF TO zcl_vehicle_08,
+          lt_vehicle_tab LIKE TABLE OF lr_vehicle,
+          lv_tabindex TYPE i.
+
+    CLEAR zcl_vehicle_08=>object_count.
+
+    DO 10 TIMES.
+      CREATE OBJECT lr_vehicle.
+      APPEND lr_vehicle TO lt_vehicle_tab[].
+    ENDDO.
+
+    LOOP AT lt_vehicle_tab INTO lr_vehicle.
+      lv_tabindex = sy-tabix * 10.
+      lr_vehicle->speed_up( lv_tabindex ).
+      lr_vehicle->display( ).
+    ENDLOOP.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method ZCL_APP_08=>START_BARKA
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD start_barka.
+    DATA: lr_vehicle TYPE REF TO zcl_vehicle_08,
+      lt_vehicle_tab LIKE TABLE OF lr_vehicle,
+      lr_ferrari TYPE REF TO zcl_racer_008,
+      lr_barage TYPE REF TO zcl_barage_008.
+
+    CREATE OBJECT: lr_ferrari,
+    lr_barage EXPORTING iv_name = 'Wroclawia'.
+
+    APPEND: lr_ferrari TO lt_vehicle_tab[],
+    lr_barage TO lt_vehicle_tab[].
+
+    lr_ferrari->speed_up( 150 ).
+    lr_barage->speed_up( 15 ).
+
+    LOOP AT lt_vehicle_tab[] INTO lr_vehicle.
+      lr_vehicle->display( ).
+    ENDLOOP.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method ZCL_APP_08=>START_EVENT
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD start_event.
+    DATA: lr_status     TYPE REF TO zif_status_08,
+      lt_status_tab     LIKE TABLE OF lr_status,
+      lr_ferrari        TYPE REF TO zcl_racer_008,
+      lr_barage         TYPE REF TO zcl_barage_008,
+      lr_heli           TYPE REF TO zcl_helicopter_08.
+
+    CREATE OBJECT:
+          lr_ferrari,
+          lr_barage EXPORTING iv_name = 'Wroclawia',
+          lr_heli.
+    APPEND: lr_ferrari TO lt_status_tab[],
+            lr_barage TO lt_status_tab[],
+            lr_heli TO lt_status_tab[].
+    SET HANDLER lr_heli->receive FOR ALL INSTANCES.
+    lr_ferrari->speed_up( 150 ).
+    lr_barage->speed_up( 15 ).
+
+    LOOP AT lt_status_tab[] INTO lr_status.
+      lr_status->display( ).
+    ENDLOOP.
+    DO 2 TIMES.
+      lr_barage->speed_up( 10 ).
+    ENDDO.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method ZCL_APP_08=>START_EXCEPTION
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD start_exception.
+    DATA: lr_status     TYPE REF TO zif_status_08,
+      lt_status_tab     LIKE TABLE OF lr_status,
+      lr_ferrari        TYPE REF TO zcl_racer_008,
+      lr_barage         TYPE REF TO zcl_barage_008,
+      lr_heli           TYPE REF TO zcl_helicopter_08.
+
+    CREATE OBJECT:
+          lr_ferrari,
+          lr_barage EXPORTING iv_name = 'Wroclawia',
+          lr_heli.
+    APPEND: lr_ferrari TO lt_status_tab[],
+            lr_barage TO lt_status_tab[],
+            lr_heli TO lt_status_tab[].
+    SET HANDLER lr_heli->receive FOR ALL INSTANCES.
+    lr_ferrari->speed_up( 150 ).
+    lr_barage->speed_up( 15 ).
+    TRY.
+        LOOP AT lt_status_tab[] INTO lr_status.
+          lr_status->display( ).
+        ENDLOOP.
+        DO 2 TIMES.
+          lr_ferrari->speed_up( 60 ).
+        ENDDO.
+      CATCH zcx_overheating_08.
+        MESSAGE 'Ferrari damaged' TYPE 'I'. EXIT.
+    ENDTRY.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Static Public Method ZCL_APP_08=>START_HELIKOPTER
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD start_helikopter.
+
+    DATA: lr_status     TYPE REF TO zif_status_08,
+          lt_status_tab LIKE TABLE OF lr_status,
+          lr_ferrari    TYPE REF TO zcl_racer_008,
+          lr_barage      TYPE REF TO zcl_barage_008,
+          lr_heli       TYPE REF TO zcl_helicopter_08.
+
+    CREATE OBJECT: lr_ferrari,
+                   lr_barage EXPORTING iv_name = 'Wroclawia',
+                   lr_heli.
+
+    APPEND:
+    lr_ferrari TO lt_status_tab[],
+    lr_barage TO lt_status_tab[],
+    lr_heli TO lt_status_tab[].
+    lr_ferrari->speed_up( 150 ).
+    lr_barage->speed_up( 15 ).
+    LOOP AT lt_status_tab[]
+      INTO lr_status.
+      lr_status->display( ).
+    ENDLOOP.
+
+  ENDMETHOD.
+ENDCLASS.
