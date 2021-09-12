@@ -1,0 +1,105 @@
+*&---------------------------------------------------------------------*
+*& Report  ZY_WAR08_ALV02
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT ZY_WAR08_ALV02_BIS.
+
+TYPES: BEGIN OF tt_user,
+         bname TYPE user_addr-bname,
+         name_first TYPE user_addr-name_first,
+         name_last TYPE user_addr-name_last,
+         erdat TYPE usr02-erdat,
+         trdat TYPE usr02-trdat,
+         t_color TYPE lvc_t_scol,
+       END OF tt_user.
+
+DATA: lt_user TYPE TABLE OF tt_user,
+      lo_alv TYPE REF TO cl_salv_table,
+      lo_kolumny_tab TYPE REF TO cl_salv_columns_table,
+      ls_user TYPE tt_user,
+      ls_color TYPE lvc_s_scol,
+      lv_count TYPE i.
+
+DATA: lo_funkcje TYPE REF TO cl_salv_functions_list.
+
+DATA: lo_naglowek TYPE REF TO cl_salv_form_layout_grid,
+      lo_n_linia_p TYPE REF TO cl_salv_form_label,
+      lo_n_linia TYPE REF TO cl_salv_form_layout_flow.
+
+DATA: lo_stopka TYPE REF TO cl_salv_form_layout_grid,
+      lo_s_linia_p TYPE REF TO cl_salv_form_label,
+      lo_s_linia TYPE REF TO cl_salv_form_layout_flow.
+
+*pobranie danych do tabeli
+SELECT user_addr~bname user_addr~name_first user_addr~name_last usr02~erdat usr02~trdat
+INTO CORRESPONDING FIELDS OF TABLE lt_user
+  FROM user_addr INNER JOIN usr02 ON user_addr~bname = usr02~bname.
+
+*pobranie danych użytkownika wykonującego raport
+SELECT SINGLE user_addr~bname user_addr~name_first user_addr~name_last usr02~erdat usr02~trdat
+INTO CORRESPONDING FIELDS OF ls_user
+  FROM user_addr INNER JOIN usr02 ON user_addr~bname = usr02~bname
+  WHERE usr02~bname = sy-uname.
+
+*pobranie ilości osób któe nie logowały się w tym roku
+SELECT COUNT(*) INTO lv_count FROM usr02 WHERE trdat < '20210101'.
+
+
+CALL METHOD cl_salv_table=>factory
+  IMPORTING
+    r_salv_table = lo_alv
+  CHANGING
+    t_table      = lt_user.
+
+lo_kolumny_tab = lo_alv->get_columns( ).
+LOOP AT lt_user ASSIGNING FIELD-SYMBOL(<fs_user>).
+  CLEAR ls_color.
+  IF <fs_user>-trdat < '20210101'.
+    ls_color-fname = 'BNAME'.
+    ls_color-color-col = 6.
+    ls_color-color-int = 0.
+    APPEND ls_color TO <fs_user>-t_color.
+  ELSE.
+    ls_color-fname = 'BNAME'.
+    ls_color-color-col = 5.
+    ls_color-color-int = 0.
+    APPEND ls_color TO <fs_user>-t_color.
+  ENDIF.
+ENDLOOP.
+
+lo_kolumny_tab->set_color_column( 'T_COLOR' ).
+
+lo_funkcje = lo_alv->get_functions( ).
+lo_funkcje->set_default( abap_true ).
+
+*tworzenie nagłówka
+CREATE OBJECT lo_naglowek.
+*linia pogrubiona
+lo_n_linia_p = lo_naglowek->create_label( row = 1 column = 1 ).
+lo_n_linia_p->set_text( 'Raport został utworzony przez').
+*linia zwykła
+lo_n_linia = lo_naglowek->create_flow( row = 2 column = 1 ).
+lo_n_linia->create_text( text = |{ ls_user-bname } { ls_user-name_first } { ls_user-name_last }| ).
+
+*dodanie nagłówka do ALV
+lo_alv->set_top_of_list( lo_naglowek ).
+
+*tworzenie nagłówka
+CREATE OBJECT lo_stopka.
+*linia pogrubiona
+lo_s_linia_p = lo_stopka->create_label( row = 1 column = 1 ).
+lo_s_linia_p->set_text( 'Liczba użytkowników').
+*linia zwykla
+lo_s_linia = lo_stopka->create_flow( row = 2 column = 1 ).
+lo_s_linia->create_text( text = |{ lv_count }| ).
+
+*dodanie stopki do ALV
+lo_alv->set_end_of_list( lo_stopka ).
+
+
+*wyświetlenie ALV
+CALL METHOD lo_alv->display.
