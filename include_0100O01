@@ -1,0 +1,17 @@
+*----------------------------------------------------------------------*
+***INCLUDE ZY_WAR08_V01_STATUS_0100O01.
+*----------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0100  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+
+MODULE status_0100 OUTPUT.
+  SET PF-STATUS 'STATUS_0100'.
+  SET TITLEBAR 'TITLE_0100'.
+
+* Narrowing down the list of company codes for which we can create the Esterometro to DE company codes
+  PERFORM dropdown_listbox.
+
+ENDMODULE.                 " STATUS_0100  OUTPUT
