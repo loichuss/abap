@@ -1,0 +1,7 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZWAR08SEL
+*&---------------------------------------------------------------------*
+
+SELECTION-SCREEN BEGIN OF SCREEN 1010 AS SUBSCREEN.
+SELECT-OPTIONS : so_fkdat FOR vbrk-fkdat OBLIGATORY.
+SELECTION-SCREEN END OF SCREEN 1010 .
