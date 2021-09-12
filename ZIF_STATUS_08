@@ -1,0 +1,6 @@
+interface ZIF_STATUS_08
+  public .
+
+
+  methods DISPLAY .
+endinterface.
