@@ -1,0 +1,92 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZWAR08TOP
+*&---------------------------------------------------------------------*
+
+TABLES: vbrk, kna1, t001, rbkp, lfa1.
+
+TYPES: BEGIN OF ts_legal_entity,
+  bukrs TYPE t001-bukrs,
+  butxt TYPE t001-butxt,
+  land1 TYPE t001-land1,
+  stceg TYPE t001-stceg,
+END OF ts_legal_entity.
+DATA: gs_legal_entity TYPE ts_legal_entity,
+      gt_legal_entity TYPE TABLE OF ts_legal_entity.
+
+TYPES: BEGIN OF ts_sale,
+  kunag TYPE vbrk-kunag,
+  bukrs TYPE vbrk-bukrs,
+  fkdat TYPE vbrk-fkdat,
+  vbeln TYPE vbrk-vbeln,
+  stceg TYPE vbrk-stceg,
+  stceg_l TYPE vbrk-stceg_l,
+  netwr TYPE vbrk-netwr,
+  mwsbk TYPE vbrk-mwsbk,
+  vatrate TYPE konp-kbetr,
+  kunnr TYPE kna1-kunnr,
+  name1 TYPE kna1-name1,
+  pstlz TYPE kna1-pstlz,
+  stras TYPE kna1-stras,
+  ort01 TYPE kna1-ort01,
+  land1 TYPE kna1-land1,
+      END OF ts_sale.
+
+DATA: gs_sale TYPE ts_sale,
+      gt_sale TYPE TABLE OF ts_sale.
+
+TYPES: BEGIN OF ts_rbkp,
+  belnr TYPE rbkp-belnr,
+  budat TYPE rbkp-budat,
+  bldat TYPE rbkp-bldat,
+  bukrs TYPE rbkp-bukrs,
+  rmwwr TYPE rbkp-rmwwr,
+  wmwst1 TYPE rbkp-wmwst1,
+  lifnr TYPE rbkp-lifnr,
+  END OF ts_rbkp.
+
+DATA: gs_rbkp TYPE ts_rbkp,
+      gt_rbkp TYPE TABLE OF ts_rbkp.
+
+TYPES: BEGIN OF ts_lfa1,
+  lifnr TYPE lfa1-lifnr,
+  name1 TYPE lfa1-name1,
+  pstlz TYPE lfa1-pstlz,
+  stras TYPE lfa1-stras,
+  ort01 TYPE lfa1-ort01,
+  land1 TYPE lfa1-land1,
+  END OF ts_lfa1.
+
+DATA: gs_lfa1 TYPE ts_lfa1,
+      gt_lfa1 TYPE TABLE OF ts_lfa1.
+
+TYPES: BEGIN OF ts_purchase,
+  bukrs TYPE rbkp-bukrs,
+  belnr TYPE rbkp-belnr,
+  budat TYPE rbkp-budat,
+  bldat TYPE rbkp-bldat,
+  rmwwr TYPE rbkp-rmwwr,
+  wmwst1 TYPE rbkp-wmwst1,
+  vatrate TYPE konp-kbetr,
+  lifnr TYPE lfa1-lifnr,
+  name1 TYPE lfa1-name1,
+  stceg TYPE rbkp-stceg,
+  pstlz TYPE lfa1-pstlz,
+  stras TYPE lfa1-stras,
+  ort01 TYPE lfa1-ort01,
+  land1 TYPE lfa1-land1,
+  END OF ts_purchase.
+
+DATA: gs_purchase TYPE ts_purchase,
+      gt_purchase TYPE TABLE OF ts_purchase.
+
+DATA: gv_tax_jurisdiction TYPE string VALUE 'DE'. "although Esterometro is an Italian tax return, I decided to present functioning of my program using DE company codes; this is because
+                                                   "there's not enough data about Italy in the database that we use at WSB
+DATA: ok_code TYPE syucomm,
+      ok_code2 TYPE syucomm,
+      rb_ap TYPE xfeld VALUE 'X',
+      rb_ar TYPE xfeld,
+      directory TYPE file VALUE 'C:\users\'. "contains info about the place where XMLs will be downloaded
+
+DATA: g_container TYPE scrfname VALUE 'ALV_CONT',
+      g_custom_cont TYPE REF TO cl_gui_custom_container,
+      grid TYPE REF TO cl_gui_alv_grid.
