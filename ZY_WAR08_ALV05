@@ -1,0 +1,243 @@
+*&---------------------------------------------------------------------*
+*& Report  ZTWJXALV11
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT zy_war08_alv05.
+
+TABLES: mkpf.
+
+TYPES: BEGIN OF tt_mkpf,
+        mblnr TYPE mkpf-mblnr,
+        mjahr TYPE mkpf-mjahr,
+        cpudt TYPE mkpf-cpudt,
+        usnam TYPE mkpf-usnam,
+       END OF tt_mkpf.
+
+DATA: lt_mkpf TYPE TABLE OF tt_mkpf.
+
+TYPES: BEGIN OF tt_mseg,
+        mblnr TYPE mseg-mblnr,
+        mjahr TYPE mseg-mjahr,
+        zeile TYPE mseg-zeile,
+        MATNR type mseg-matnr,
+        menge type mseg-menge,
+        meins type mseg-meins,
+       END OF tt_mseg.
+
+DATA: lt_mseg TYPE TABLE OF tt_mseg.
+
+
+DATA: ok_code TYPE sy-ucomm,
+      ok_code2 TYPE sy-ucomm,
+      ok_code3 TYPE sy-ucomm.
+
+
+DATA: g_container_mkpf   TYPE scrfname VALUE 'ALV_MKPF',
+      g_custom_cont_mkpf TYPE REF TO cl_gui_custom_container,
+      grid_mkpf          TYPE REF TO cl_gui_alv_grid.
+DATA: g_container_mseg   TYPE scrfname VALUE 'ALV_MSEG',
+      g_custom_cont_mseg TYPE REF TO cl_gui_custom_container,
+      grid_mseg          TYPE REF TO cl_gui_alv_grid.
+
+
+CLASS lcl_event_receiver DEFINITION DEFERRED.
+CLASS lcl_event_receiver DEFINITION.
+  PUBLIC SECTION.
+    METHODS:
+      handle_double_click FOR EVENT double_click OF cl_gui_alv_grid IMPORTING e_row e_column es_row_no,
+      handle_user_command FOR EVENT user_command OF cl_gui_alv_grid IMPORTING e_ucomm,
+      handle_toolbar FOR EVENT toolbar OF cl_gui_alv_grid IMPORTING e_object e_interactive.
+ENDCLASS.
+
+CLASS lcl_event_receiver IMPLEMENTATION.
+  METHOD handle_double_click.
+    DATA: ls_mkpf TYPE tt_mkpf.
+    READ TABLE lt_mkpf INTO ls_mkpf INDEX es_row_no-row_id.
+    IF sy-subrc = 0.
+*pobranie danych
+      SELECT mseg~mblnr mseg~mjahr mseg~zeile mseg~matnr mseg~menge mseg~meins INTO TABLE lt_mseg FROM mseg
+        WHERE mjahr = ls_mkpf-mjahr
+          AND mblnr = ls_mkpf-mblnr.
+      CALL SCREEN 0300.
+    ENDIF.
+  ENDMETHOD.
+  METHOD handle_user_command.
+    DATA: lt_row TYPE lvc_t_roid,
+          ls_row TYPE lvc_s_roid,
+          ls_mkpf TYPE tt_mkpf,
+          lv_info TYPE string.
+
+    CASE e_ucomm.
+      WHEN 'DETAIL'.
+        grid_mkpf->get_selected_rows(
+        IMPORTING
+          et_row_no = lt_row ).
+        READ TABLE lt_row INTO ls_row INDEX 1.
+        IF sy-subrc = 0.
+          READ TABLE lt_mkpf INTO ls_mkpf INDEX ls_row-row_id.
+          IF sy-subrc = 0.
+            lv_info = |Dokumentu utworzono w dniu { ls_mkpf-cpudt DATE = USER } przez { ls_mkpf-usnam }|.
+            MESSAGE lv_info TYPE 'I'.
+          ENDIF.
+        ENDIF.
+
+    ENDCASE.
+  ENDMETHOD.
+  METHOD handle_toolbar.
+    DATA: ls_toolbar  TYPE stb_button.
+    CLEAR ls_toolbar.
+    MOVE 'DETAIL' TO ls_toolbar-function.
+    MOVE icon_select_detail TO ls_toolbar-icon.
+    MOVE 'Szczegóły' TO ls_toolbar-quickinfo.
+    MOVE ' ' TO ls_toolbar-disabled.
+    APPEND ls_toolbar TO e_object->mt_toolbar.
+  ENDMETHOD.
+ENDCLASS.
+
+DATA: event_receiver TYPE REF TO lcl_event_receiver.
+
+INCLUDE ZY_WAR08_ALV_05_0100O01.
+*INCLUDE ztwjxalv11_0100o01.
+INCLUDE ZY_WAR08_ALV_05_0100I01.
+*INCLUDE ztwjxalv11_0100i01.
+INCLUDE ZY_WAR08_ALV_05_0200O01.
+*INCLUDE ztwjxalv11_0200o01.
+INCLUDE ZY_WAR08_ALV_05_0200I01.
+*INCLUDE ztwjxalv11_0200i01.
+INCLUDE ZY_WAR08_ALV_05_0300O01.
+*INCLUDE ztwjxalv11_0300o01.
+INCLUDE ZY_WAR08_ALV_05_0300I01.
+*INCLUDE ztwjxalv11_0300i01.
+
+START-OF-SELECTION.
+  CALL SCREEN 0100.
+
+
+*----------------------------------------------------------------------*
+***INCLUDE ZTWJXALV11_0100I01.
+*----------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+  DATA: lv_ok_code TYPE sy-ucomm.
+  MOVE ok_code TO lv_ok_code.
+  CLEAR ok_code.
+  CASE lv_ok_code.
+    WHEN 'BACK' OR 'END' OR 'EXIT'.
+      LEAVE PROGRAM.
+    WHEN 'BSZD'.
+      SELECT mkpf~mblnr mkpf~mjahr mkpf~cpudt mkpf~usnam INTO CORRESPONDING FIELDS OF TABLE lt_mkpf FROM mkpf
+        WHERE mjahr = mkpf-mjahr.
+      CALL SCREEN 0200.
+  ENDCASE.
+ENDMODULE.                 " USER_COMMAND_0100  INPUT
+
+
+*----------------------------------------------------------------------*
+***INCLUDE ZTWJXALV11_0100O01.
+*----------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0100  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE status_0100 OUTPUT.
+SET PF-STATUS 'STATUS_0100'.
+*  SET TITLEBAR 'xxx'.
+
+ENDMODULE.                 " STATUS_0100  OUTPUT
+
+
+*----------------------------------------------------------------------*
+***INCLUDE ZTWJXALV11_0200I01.
+*----------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0200  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0200 INPUT.
+  DATA: lv_ok_code2 TYPE sy-ucomm.
+  MOVE ok_code2 TO lv_ok_code2.
+  CLEAR ok_code2.
+  CASE lv_ok_code2.
+    WHEN 'END' OR 'EXIT'.
+      LEAVE PROGRAM.
+    WHEN 'BACK'.
+      LEAVE TO SCREEN 0100.
+    WHEN OTHERS.
+  ENDCASE.
+ENDMODULE.                 " USER_COMMAND_0200  INPUT
+
+
+*----------------------------------------------------------------------*
+***INCLUDE ZTWJXALV11_0200O01.
+*----------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0200  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE status_0200 OUTPUT.
+  SET PF-STATUS 'STATUS_0200'.
+  SET TITLEBAR 'TITLE_0200'.
+
+  IF g_custom_cont_mkpf IS INITIAL.
+    DATA: lt_exclude_mkpf TYPE ui_functions.
+    CREATE OBJECT g_custom_cont_mkpf
+      EXPORTING
+        container_name = g_container_mkpf.
+    CREATE OBJECT grid_mkpf
+      EXPORTING
+        i_parent = g_custom_cont_mkpf.
+
+    DATA(t_fcat_mkpf) = VALUE lvc_t_fcat( ( fieldname = 'MBLNR' coltext = 'Dokument' outputlen = 10 col_pos = 1 )
+                                     ( fieldname = 'MJAHR' coltext = 'Rok' outputlen = 6 col_pos = 2 ) ).
+
+    PERFORM toolbar_mkpf.
+    CALL METHOD grid_mkpf->set_table_for_first_display
+      EXPORTING
+        it_toolbar_excluding = lt_exclude_mkpf
+      CHANGING
+        it_fieldcatalog      = t_fcat_mkpf
+        it_outtab            = lt_mkpf.
+
+    CREATE OBJECT event_receiver.
+    SET HANDLER event_receiver->handle_double_click FOR grid_mkpf.
+    SET HANDLER event_receiver->handle_toolbar for grid_mkpf.
+    SET HANDLER event_receiver->handle_user_command FOR grid_mkpf.
+    CALL METHOD grid_mkpf->set_toolbar_interactive.
+  ELSE.
+    grid_mkpf->refresh_table_display( ).
+  ENDIF.
+ENDMODULE.
+
+FORM toolbar_mkpf.
+  lt_exclude_mkpf = VALUE ui_functions( ( cl_gui_alv_grid=>mc_fc_detail )
+                                         ( cl_gui_alv_grid=>mc_fc_check )
+                                         ( cl_gui_alv_grid=>mc_fc_refresh )
+                                         ( cl_gui_alv_grid=>mc_fc_loc_cut )
+                                         ( cl_gui_alv_grid=>mc_fc_loc_copy )
+                                         ( cl_gui_alv_grid=>mc_mb_paste )
+                                         ( cl_gui_alv_grid=>mc_fc_loc_undo )
+                                         ( cl_gui_alv_grid=>mc_fc_loc_append_row )
+                                         ( cl_gui_alv_grid=>mc_fc_loc_insert_row )
+                                         ( cl_gui_alv_grid=>mc_fc_loc_delete_row )
+                                         ( cl_gui_alv_grid=>mc_fc_loc_copy_row )
+                                         ( cl_gui_alv_grid=>mc_mb_filter )
+                                         ( cl_gui_alv_grid=>mc_mb_sum )
+                                         ( cl_gui_alv_grid=>mc_mb_subtot )
+                                         ( cl_gui_alv_grid=>mc_fc_print_back )
+                                         ( cl_gui_alv_grid=>mc_mb_view )
+                                         ( cl_gui_alv_grid=>mc_mb_export )
+                                         ( cl_gui_alv_grid=>mc_fc_info )
+                                         ( cl_gui_alv_grid=>mc_fc_graph )
+                                         ( cl_gui_alv_grid=>mc_mb_variant ) ).
+ENDFORM.
