@@ -1,0 +1,407 @@
+*&---------------------------------------------------------------------*
+*&  Include           ZWAR08F01
+*&---------------------------------------------------------------------*
+
+* Retriving sales data from database which will be presented on ALV and used in XML
+FORM get_data_ar.
+
+  SELECT  v~kunag v~bukrs v~fkdat v~vbeln v~stceg v~netwr v~mwsbk k~kunnr k~name1 k~pstlz k~stras k~ort01 k~land1
+              INTO  CORRESPONDING FIELDS OF TABLE gt_sale
+              FROM  ( vbrk AS v INNER JOIN kna1 AS k ON v~kunag = k~kunnr )
+              WHERE v~bukrs = t001-bukrs AND
+                    v~fkdat IN so_fkdat AND
+                    k~land1 NE gv_tax_jurisdiction AND k~land1 IS NOT NULL AND k~land1 NE ' '.
+  LOOP AT gt_sale INTO gs_sale.
+    gs_sale-vatrate = ( gs_sale-mwsbk / gs_sale-netwr ) * 100.
+    MODIFY gt_sale FROM gs_sale TRANSPORTING vatrate.
+  ENDLOOP.
+
+  CHECK gt_sale IS NOT INITIAL.
+
+ENDFORM.
+
+* Retriving purchase data from database which will be presented on ALV and used in XML
+FORM get_data_ap.
+
+  SELECT rbkp~bukrs rbkp~belnr rbkp~rmwwr rbkp~wmwst1 rbkp~budat rbkp~bldat rbkp~stceg rbkp~lifnr lfa1~lifnr lfa1~name1 lfa1~pstlz lfa1~stras lfa1~ort01 lfa1~land1
+                INTO  CORRESPONDING FIELDS OF TABLE gt_purchase
+                FROM  rbkp INNER JOIN lfa1 ON rbkp~lifnr = lfa1~lifnr
+                WHERE rbkp~bukrs = t001-bukrs AND
+                      rbkp~budat IN so_fkdat AND
+                      lfa1~land1 NE gv_tax_jurisdiction AND lfa1~land1 IS NOT NULL AND lfa1~land1 NE ' '.
+  LOOP AT gt_purchase INTO gs_purchase.
+    gs_purchase-rmwwr = gs_purchase-rmwwr - gs_purchase-wmwst1.
+    MODIFY gt_purchase FROM gs_purchase TRANSPORTING rmwwr.
+    gs_purchase-vatrate = ( gs_purchase-wmwst1 / ( gs_purchase-rmwwr - gs_purchase-wmwst1 ) ) * 100.
+    MODIFY gt_purchase FROM gs_purchase TRANSPORTING vatrate.
+  ENDLOOP.
+
+  CHECK gt_purchase IS NOT INITIAL.
+
+ENDFORM.
+
+* Creating ALV grid
+FORM sub_create_grid.
+
+  CREATE OBJECT g_custom_cont
+    EXPORTING
+      container_name = g_container.
+  CREATE OBJECT grid
+    EXPORTING
+      i_parent = g_custom_cont.
+
+  IF rb_ar = 'X'.
+
+    DATA(t_fcat) = VALUE lvc_t_fcat( ( fieldname = 'BUKRS' coltext = 'Company code' outputlen = 10 col_pos = 1 )
+                                     ( fieldname = 'VBELN' coltext = 'Sales document no.' outputlen = 10 col_pos = 2 )
+                                     ( fieldname = 'FKDAT' coltext = 'Posting date' outputlen = 10 col_pos = 3 )
+                                     ( fieldname = 'NETWR' coltext = 'VAT base amount' outputlen = 10 col_pos = 4 )
+                                     ( fieldname = 'MWSBK' coltext = 'VAT amount' outputlen = 6 col_pos = 5 )
+                                     ( fieldname = 'VATRATE' coltext = 'VAT rate' outputlen = 10 col_pos = 6 )
+                                     ( fieldname = 'NAME1' coltext = 'Customer' outputlen = 10 col_pos = 7 )
+                                     ( fieldname = 'STCEG' coltext = 'VAT no.' outputlen = 10 col_pos = 8 )
+                                     ( fieldname = 'PSTLZ' coltext = 'Zip code' outputlen = 6 col_pos = 9 )
+                                     ( fieldname = 'STRAS' coltext = 'Street' outputlen = 10 col_pos = 10 )
+                                     ( fieldname = 'ORT01' coltext = 'City' outputlen = 10 col_pos = 11 )
+                                     ( fieldname = 'LAND1' coltext = 'Country' outputlen = 10 col_pos = 12 ) ).
+
+    CALL METHOD grid->set_table_for_first_display
+      CHANGING
+        it_fieldcatalog = t_fcat
+        it_outtab       = gt_sale.
+
+  ELSEIF rb_ap = 'X'.
+
+    DATA(t_fcat_ap) = VALUE lvc_t_fcat( ( fieldname = 'BUKRS' coltext = 'Company code' outputlen = 6 col_pos = 1 )
+                                   ( fieldname = 'BELNR' coltext = 'Accounting document no.' outputlen = 10 col_pos = 2 )
+                                   ( fieldname = 'BUDAT' coltext = 'Posting date  ' outputlen = 10 col_pos = 3 )
+                                   ( fieldname = 'BLDAT' coltext = 'Document ate' outputlen = 10 col_pos = 4 )
+                                   ( fieldname = 'RMWWR' coltext = 'VAT base amount' outputlen = 10 col_pos = 5 )
+                                   ( fieldname = 'WMWST1' coltext = 'VAT amount' outputlen = 10 col_pos = 6 )
+                                   ( fieldname = 'VATRATE' coltext = 'VAT rate' outputlen = 10 col_pos = 7 )
+                                   ( fieldname = 'NAME1' coltext = 'Vendor name' outputlen = 6 col_pos = 8 )
+                                   ( fieldname = 'STCEG' coltext = 'VAT No.' outputlen = 10 col_pos = 9 )
+                                   ( fieldname = 'PSTLZ' coltext = 'Zip code' outputlen = 10 col_pos = 10 )
+                                   ( fieldname = 'STRAS' coltext = 'Street' outputlen = 10 col_pos = 11 )
+                                   ( fieldname = 'ORT01' coltext = 'City' outputlen = 6 col_pos = 12 )
+                                   ( fieldname = 'LAND1' coltext = 'Country' outputlen = 10 col_pos = 13 ) ).
+
+
+    CALL METHOD grid->set_table_for_first_display
+      CHANGING
+        it_fieldcatalog = t_fcat_ap
+        it_outtab       = gt_purchase.
+
+  ENDIF.
+
+  CREATE OBJECT event_receiver.
+*  SET HANDLER event_receiver->handle_double_click FOR grid.
+  SET HANDLER event_receiver->handle_toolbar FOR grid.
+  SET HANDLER event_receiver->handle_user_command FOR grid.
+  CALL METHOD grid->set_toolbar_interactive.
+
+ENDFORM.
+
+* Filling out XML structure created via XSLT_TOOL (Simple Transformation) with sales data and downloading it into presentation server
+FORM download_esterometro_ar.
+
+  DATA: ls_ar_out TYPE zwar08_customer_final_st, "zwar08_customer_final_st is an XML structure created in XSLT_TOOL
+        ls_customer TYPE zwar08_customers_st, "zwar08_customers_st is a deep structure created in dictionary to reflect the structure of XML with sales info
+        lt_customers TYPE zwar08_customers_tt, "table type for the structure mentioned above; this tt is nested in zwar08_customer_final_st
+        ls_invoices TYPE zwar08_invoices_ar_st, "zwar08_invoices_ar_st is a structure containing info about sales invoices
+        lt_invoices TYPE zwar08_invoices_ar_tt, "table type for the structure mentioned above, this tt is nested in zwar08_customers_st
+        ls_sale2 TYPE ts_sale,
+        lt_sale2 TYPE TABLE OF ts_sale,
+        tmp_name TYPE kna1-name1. "this variable was created to navigate in the nested loop; normally it could be replaced by "group by", but it seems that "group by" doesn't work here
+
+  DATA: lv_xml_result TYPE xstring,
+        lv_bin_string TYPE xstring,
+        lt_bin_tab TYPE STANDARD TABLE OF char2048,
+        lv_file_length TYPE i,
+        lv_file TYPE string,
+        lv_msg TYPE string,
+        r_excep TYPE REF TO cx_st_match_element.
+
+  PERFORM get_data_ar.
+
+  SORT gt_sale BY name1.
+
+  lt_sale2 = gt_sale. "creating copy of gt_sale in order to fill out the deep structure ls_ar_out
+
+
+* Filling out the header of XML with info about the company code which is supposed to file the Esterometro
+  SELECT * FROM t001
+                INTO CORRESPONDING FIELDS OF TABLE gt_legal_entity
+                WHERE t001~bukrs = t001-bukrs.
+  LOOP AT gt_legal_entity INTO gs_legal_entity.
+    ls_ar_out-country_prefix = gs_legal_entity-land1.
+    ls_ar_out-vat_no = gs_legal_entity-stceg.
+    ls_ar_out-country_prefix_2 = gs_legal_entity-land1.
+    ls_ar_out-vat_no_2 = gs_legal_entity-stceg.
+    ls_ar_out-selling_le = gs_legal_entity-butxt.
+  ENDLOOP.
+
+* Filling out the body of XML with sales invoice data
+  LOOP AT gt_sale INTO gs_sale. "first I fill out the XML section with address info about customer
+    IF tmp_name NE gs_sale-name1.
+      ls_customer-name1 = gs_sale-name1.
+      ls_customer-land1 = gs_sale-land1.
+      ls_customer-ort01 = gs_sale-ort01.
+      ls_customer-pstlz = gs_sale-pstlz.
+      ls_customer-stras = gs_sale-stras.
+      LOOP AT lt_sale2 INTO ls_sale2 "then I create a list of all sales invoices raised to the same customer
+        WHERE name1 = gs_sale-name1.
+        ls_invoices-vbeln = ls_sale2-vbeln.
+        ls_invoices-fkdat = ls_sale2-fkdat.
+        ls_invoices-netwr = ls_sale2-netwr.
+        ls_invoices-mwsbk = ls_sale2-mwsbk.
+        ls_invoices-vatrate = ls_sale2-vatrate.
+        APPEND ls_invoices TO lt_invoices.
+      ENDLOOP.
+      CLEAR ls_invoices.
+      ls_customer-invoices = lt_invoices. "lt_invoices is nested in ls_customer
+      APPEND ls_customer TO lt_customers.
+      CLEAR ls_customer.
+      REFRESH lt_invoices.
+      ls_ar_out-sales_invoices = lt_customers. "lt_customers is nested in ls_ar_out
+    ENDIF.
+    tmp_name = gs_sale-name1.
+  ENDLOOP.
+
+* Creating name of XML file which will be downloaded by the user
+  CONCATENATE: 'CUSTOMER_OUT' sy-datum INTO lv_file SEPARATED BY '_' ,
+   lv_file sy-uzeit '.xml' INTO lv_file, directory lv_file INTO lv_file.
+
+* Converting above data into binary data
+  TRY.
+      CALL TRANSFORMATION zwar08_ar_estero
+        SOURCE datifattura = ls_ar_out
+        RESULT XML lv_xml_result.
+    CATCH cx_st_match_element INTO r_excep.
+      lv_msg = r_excep->get_text( ).
+      WRITE lv_msg.
+  ENDTRY.
+
+* Converting binary data to table-type binary output variable (this varaible will be used in 'GUI download' function)
+  CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
+    EXPORTING
+      buffer        = lv_xml_result
+    IMPORTING
+      output_length = lv_file_length
+    TABLES
+      binary_tab    = lt_bin_tab.
+
+* Saving xml to local file
+  CALL FUNCTION 'GUI_DOWNLOAD'
+    EXPORTING
+      bin_filesize            = lv_file_length
+      filename                = lv_file
+      filetype                = 'BIN'
+    TABLES
+      data_tab                = lt_bin_tab
+    EXCEPTIONS
+      file_write_error        = 1
+      no_batch                = 2
+      gui_refuse_filetransfer = 3
+      invalid_type            = 4
+      no_authority            = 5
+      unknown_error           = 6
+      header_not_allowed      = 7
+      separator_not_allowed   = 8
+      filesize_not_allowed    = 9
+      header_too_long         = 10
+      dp_error_create         = 11
+      dp_error_send           = 12
+      dp_error_write          = 13
+      unknown_dp_error        = 14
+      access_denied           = 15
+      dp_out_of_memory        = 16
+      disk_full               = 17
+      dp_timeout              = 18
+      file_not_found          = 19
+      dataprovider_exception  = 20
+      control_flush_error     = 21
+      not_supported_by_gui    = 22
+      error_no_gui            = 23
+      OTHERS                  = 24.
+
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid
+            TYPE sy-msgty
+            NUMBER sy-msgno
+            WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ELSE.
+    MESSAGE 'File downloaded successfully' TYPE 'S'.
+  ENDIF.
+
+ENDFORM.
+
+
+FORM download_esterometro_ap.
+
+  DATA: ls_ap_out TYPE zwar08_ap_final_st, "zwar08_ap_final_st is an XML structure created in XSLT_TOOL
+        ls_vendors TYPE zwar08_vendors_st, "zwar08_vendors_st is a deep structure created in dictionary to reflect the structure of XML with purchase info
+        lt_vendors TYPE zwar08_vendor_tt,  "table type for the structure mentioned above; this tt is nested in zwar08_ap_final_st
+        ls_invoices TYPE zwar08_invoices_ap_st, "zwar08_invoices_ap_st is a structure containing info about purchase invoices
+        lt_invoices TYPE zwar08_invoices_ap_tt, "table type for the structure mentioned above, this tt is nested in zwar08_vendors_st
+        lt_purchase2 TYPE TABLE OF ts_purchase,
+        ls_purchase2 TYPE ts_purchase,
+        tmp_name TYPE lfa1-name1.
+
+  DATA: lv_xml_result TYPE xstring,
+        lv_bin_string TYPE xstring,
+        lt_bin_tab TYPE STANDARD TABLE OF char2048,
+        lv_file_length TYPE i,
+        lv_file TYPE string,
+        lv_msg TYPE string,
+        r_excep TYPE REF TO cx_st_match_element.
+
+
+  PERFORM get_data_ap.
+
+  SORT gt_purchase BY name1.
+
+  lt_purchase2 = gt_purchase. "creating copy of gt_purchase in order to fill out the deep structure ls_ap_out
+
+* Filling out the header of XML with info about the company code which is supposed to file the Esterometro
+  SELECT * FROM t001
+                INTO CORRESPONDING FIELDS OF TABLE gt_legal_entity
+                WHERE t001~bukrs = t001-bukrs.
+  LOOP AT gt_legal_entity INTO gs_legal_entity.
+    ls_ap_out-country_prefix = gs_legal_entity-land1.
+    ls_ap_out-vat_no = gs_legal_entity-stceg.
+    ls_ap_out-country_prefix_2 = gs_legal_entity-land1.
+    ls_ap_out-vat_no_2 = gs_legal_entity-stceg.
+    ls_ap_out-purchasing_le = gs_legal_entity-butxt.
+  ENDLOOP.
+
+* Filling out the body of XML with purchase invoice data
+  LOOP AT gt_purchase INTO gs_purchase. "first I fill out the XML section with address info about vendor
+    IF tmp_name NE gs_purchase-name1.
+      ls_vendors-name1 = gs_purchase-name1.
+      ls_vendors-stceg = gs_purchase-stceg.
+      ls_vendors-land1 = gs_purchase-land1.
+      ls_vendors-ort01 = gs_purchase-ort01.
+      ls_vendors-pstlz = gs_purchase-pstlz.
+      ls_vendors-stras = gs_purchase-stras.
+      LOOP AT lt_purchase2 INTO ls_purchase2 "then I create a list of all purchase invoices raised to the same vendor
+        WHERE name1 = gs_purchase-name1.
+        ls_invoices-belnr = ls_purchase2-belnr.
+        ls_invoices-budat = ls_purchase2-budat.
+        ls_invoices-bldat = ls_purchase2-bldat.
+        ls_invoices-rmwwr = ls_purchase2-rmwwr.
+        ls_invoices-wmwst1 = ls_purchase2-wmwst1.
+        ls_invoices-vatrate = ls_purchase2-vatrate.
+        APPEND ls_invoices TO lt_invoices.
+      ENDLOOP.
+      CLEAR ls_invoices.
+      ls_vendors-invoices = lt_invoices. "lt_invoices is nested in ls_vendors
+      APPEND ls_vendors TO lt_vendors.
+      CLEAR ls_vendors.
+      REFRESH lt_invoices.
+      ls_ap_out-purchase_invoices = lt_vendors. "lt_vendors is nested in ls_ap_out
+    ENDIF.
+    tmp_name = gs_purchase-name1.
+  ENDLOOP.
+
+* Creating name of XML file which will be downloaded by the user
+  CONCATENATE: 'VENDOR_OUT' sy-datum INTO lv_file SEPARATED BY '_' ,
+   lv_file sy-uzeit '.xml' INTO lv_file, directory lv_file INTO lv_file.
+
+* Converting above data into binary data
+  TRY.
+      CALL TRANSFORMATION zwar08_ap_estero
+        SOURCE datifattura = ls_ap_out
+        RESULT XML lv_xml_result.
+    CATCH cx_st_match_element INTO r_excep.
+      lv_msg = r_excep->get_text( ).
+      WRITE lv_msg.
+  ENDTRY.
+
+* Converting binary data to table-type binary output variable (this varaible will be used in 'GUI download' function)
+  CALL FUNCTION 'SCMS_XSTRING_TO_BINARY'
+    EXPORTING
+      buffer        = lv_xml_result
+    IMPORTING
+      output_length = lv_file_length
+    TABLES
+      binary_tab    = lt_bin_tab.
+
+* Saving data to local file
+  CALL FUNCTION 'GUI_DOWNLOAD'
+    EXPORTING
+      bin_filesize            = lv_file_length
+      filename                = lv_file
+      filetype                = 'BIN'
+    TABLES
+      data_tab                = lt_bin_tab
+    EXCEPTIONS
+      file_write_error        = 1
+      no_batch                = 2
+      gui_refuse_filetransfer = 3
+      invalid_type            = 4
+      no_authority            = 5
+      unknown_error           = 6
+      header_not_allowed      = 7
+      separator_not_allowed   = 8
+      filesize_not_allowed    = 9
+      header_too_long         = 10
+      dp_error_create         = 11
+      dp_error_send           = 12
+      dp_error_write          = 13
+      unknown_dp_error        = 14
+      access_denied           = 15
+      dp_out_of_memory        = 16
+      disk_full               = 17
+      dp_timeout              = 18
+      file_not_found          = 19
+      dataprovider_exception  = 20
+      control_flush_error     = 21
+      not_supported_by_gui    = 22
+      error_no_gui            = 23
+      OTHERS                  = 24.
+
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid
+            TYPE sy-msgty
+            NUMBER sy-msgno
+            WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ELSE.
+    MESSAGE 'File downloaded successfully' TYPE 'S'.
+  ENDIF.
+
+ENDFORM.
+
+FORM dropdown_listbox.
+
+  TYPE-POOLS : vrm.
+
+  DATA: ld_field    TYPE vrm_id ,
+        it_listbox  TYPE vrm_values,
+        wa_listbox  LIKE LINE OF it_listbox.
+  DATA: it_t001 TYPE STANDARD TABLE OF t001,
+        wa_t001 TYPE t001.
+
+  SELECT * FROM t001 INTO TABLE it_t001
+    WHERE t001~land1 EQ 'DE'.
+
+  LOOP AT it_t001 INTO wa_t001.
+    wa_listbox-key = wa_t001-bukrs.
+    wa_listbox-text = wa_t001-bukrs.
+    APPEND wa_listbox TO it_listbox.
+  ENDLOOP.
+
+  CALL FUNCTION 'VRM_SET_VALUES'
+    EXPORTING
+      id              = 'T001-BUKRS'
+      values          = it_listbox
+    EXCEPTIONS
+      id_illegal_name = 1
+      OTHERS          = 2.
+
+  IF sy-subrc <> 0.
+    MESSAGE ID sy-msgid TYPE sy-msgty NUMBER sy-msgno
+    WITH sy-msgv1 sy-msgv2 sy-msgv3 sy-msgv4.
+  ENDIF.
+
+ENDFORM.
