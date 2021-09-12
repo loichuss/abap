@@ -1,0 +1,30 @@
+*----------------------------------------------------------------------*
+***INCLUDE ZY_WAR08_V01_USER_COMMAND_0I01.
+*----------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+
+  DATA: lv_ok_code TYPE syucomm.
+
+  MOVE ok_code TO lv_ok_code.
+  CLEAR ok_code.
+
+  CASE lv_ok_code.
+    WHEN 'BACK' OR 'CANCEL' OR 'EXIT'.
+      LEAVE PROGRAM.
+    WHEN 'PRESS'.
+      IF ( t001-bukrs IS NOT INITIAL AND so_fkdat IS NOT INITIAL ).
+        IF rb_ar = 'X'.
+          PERFORM get_data_ar.
+        ELSEIF rb_ap = 'X'.
+          PERFORM get_data_ap.
+        ENDIF.
+      ENDIF.
+      CALL SCREEN 0200.
+  ENDCASE.
+
+ENDMODULE.                 " USER_COMMAND_0100  INPUT
