@@ -1,0 +1,75 @@
+class ZCL_BARAGE_008 definition
+  public
+  inheriting from ZCL_VEHICLE_08
+  final
+  create public .
+
+public section.
+
+  data NAME type STRING .
+
+  events DAMAGED .
+
+  methods CONSTRUCTOR
+    importing
+      !IV_NAME type STRING optional .
+
+  methods DISPLAY
+    redefinition .
+  methods SPEED_UP
+    redefinition .
+protected section.
+private section.
+ENDCLASS.
+
+
+
+CLASS ZCL_BARAGE_008 IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_BARAGE_008->CONSTRUCTOR
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_NAME                        TYPE        STRING(optional)
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD constructor.
+    CALL METHOD super->constructor.
+    me->max_speed = 30.
+    me->name = iv_name.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Private Method ZCL_BARAGE_008->DISPLAY
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD display.
+*CALL METHOD SUPER->DISPLAY
+*    DATA lv_msg TYPE string.
+*    lv_msg = 'Vehicle ' && |{ me->mv_id }| && ', Speed = ' && |{ me->mv_speed }| && ', Max-Speed = ' && |{ me->mv_max_speed }|.
+*    MESSAGE lv_msg TYPE 'I'.
+
+    MESSAGE i003 WITH name speed max_speed.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_BARAGE_008->SPEED_UP
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_STEP                        TYPE        I
+* | [!CX!] ZCX_OVERHEATING_08
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD speed_up.
+*CALL METHOD SUPER->SPEED_UP
+*  EXPORTING
+*    IV_STEP =
+*    .
+    me->speed = me->speed + iv_step.
+    IF me->speed > me->max_speed.
+      me->max_speed = 0.
+      CALL METHOD me->stop( ).
+      RAISE EVENT damaged.
+    ENDIF.
+  ENDMETHOD.
+ENDCLASS.
