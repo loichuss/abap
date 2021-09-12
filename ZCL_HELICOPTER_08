@@ -1,0 +1,46 @@
+class ZCL_HELICOPTER_08 definition
+  public
+  final
+  create public .
+
+public section.
+
+  interfaces ZIF_STATUS_08 .
+
+  methods RECEIVE
+    for event DAMAGED of ZCL_BARAGE_008
+    importing
+      !SENDER .
+protected section.
+private section.
+ENDCLASS.
+
+
+
+CLASS ZCL_HELICOPTER_08 IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_HELICOPTER_08->RECEIVE
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] SENDER                         LIKE
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD receive.
+    DATA lv_msg TYPE string.
+    lv_msg = 'Helicopter received call from ' && sender->name.
+    MESSAGE lv_msg TYPE 'I'.
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_HELICOPTER_08->ZIF_STATUS_08~DISPLAY
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD zif_status_08~display.
+
+    DATA lv_msg TYPE string.
+    lv_msg = 'Helicopter, idle'.
+    MESSAGE lv_msg TYPE 'I'.
+
+  ENDMETHOD.
+ENDCLASS.
