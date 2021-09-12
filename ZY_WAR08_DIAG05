@@ -1,0 +1,53 @@
+*&---------------------------------------------------------------------*
+*& Report  ZY_WAR08_DIAG05
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT zy_war08_diag05.
+TABLES: lips.
+DATA: ok_code TYPE syucomm,
+      gt_lips TYPE TABLE OF lips,
+      gv_docno TYPE lips-vbeln.
+
+CONTROLS document TYPE TABLEVIEW USING SCREEN 0100.
+*&---------------------------------------------------------------------*
+*&      Module  STATUS_0100  OUTPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE status_0100 OUTPUT.
+  SET PF-STATUS 'STATUS_0100'.
+*  SET TITLEBAR 'xxx'.
+
+ENDMODULE.                 " STATUS_0100  OUTPUT
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_0100  INPUT
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+MODULE user_command_0100 INPUT.
+
+  DATA: lv_ok_code TYPE syucomm.
+
+  MOVE ok_code TO lv_ok_code.
+  CLEAR ok_code.
+
+  CASE lv_ok_code.
+    WHEN 'BACK' OR 'END' OR 'EXIT'.
+      LEAVE PROGRAM.
+    WHEN 'CONT'.
+      IF gv_docno IS NOT INITIAL.
+        UNPACK gv_docno to gv_docno.
+        SELECT * FROM lips INTO table gt_lips
+          WHERE vbeln = gv_docno.
+        ENDIF.
+    ENDCASE.
+
+
+ENDMODULE.                 " USER_COMMAND_0100  INPUT
+
+START-OF-SELECTION.
+  CALL SCREEN 0100.
