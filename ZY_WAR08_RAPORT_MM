@@ -1,0 +1,94 @@
+*&---------------------------------------------------------------------*
+*& Report  ZY_WAR08_RAPORT_MM
+*&
+*&---------------------------------------------------------------------*
+*& Raport zamówień MM
+*& Natalia Huss
+*&---------------------------------------------------------------------*
+
+REPORT zy_war08_raport_mm.
+
+TABLES ekko.
+
+INCLUDE zy_war08_raport_mm_top.
+
+SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE text-001.
+PARAMETERS p_bukrs LIKE ekko-bukrs OBLIGATORY.
+SELECT-OPTIONS s_ebeln FOR ekko-ebeln.
+PARAMETERS c_adva AS CHECKBOX USER-COMMAND uc1.
+SELECTION-SCREEN END OF BLOCK b01.
+
+SELECTION-SCREEN BEGIN OF BLOCK b02 WITH FRAME TITLE text-002.
+SELECT-OPTIONS:
+  s_bstyp FOR ekko-bstyp MODIF ID id1,
+  s_bsart FOR ekko-bsart NO INTERVALS MODIF ID id1.
+SELECTION-SCREEN END OF BLOCK b02.
+
+INITIALIZATION.
+  p_bukrs = 1000.
+
+AT SELECTION-SCREEN OUTPUT.
+  LOOP AT SCREEN.
+    IF screen-group1 EQ 'ID1'.
+      IF c_adva EQ 'X'.
+        screen-active = 1.
+      ELSE.
+        screen-active = 0.
+      ENDIF.
+      MODIFY SCREEN.
+    ENDIF.
+  ENDLOOP.
+
+  INCLUDE zy_war08_raport_mm_f01.
+
+START-OF-SELECTION.
+  PERFORM get_data.
+
+END-OF-SELECTION.
+  PERFORM show_data.
+
+*&---------------------------------------------------------------------*
+*&  Include           ZY_WAR08_RAPORT_MM_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Form  GET_DATA
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM get_data .
+  SELECT * FROM ekko INTO CORRESPONDING FIELDS OF TABLE gt_data
+    WHERE ebeln IN s_ebeln
+     AND bukrs EQ p_bukrs
+     AND bstyp IN s_bstyp
+     AND bsart IN s_bsart.
+
+ENDFORM.                    " GET_DATA
+*&---------------------------------------------------------------------*
+*&      Form  SHOW_DATA
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM show_data .
+  TRY.
+      CALL METHOD cl_salv_table=>factory
+*    EXPORTING
+*      list_display   = IF_SALV_C_BOOL_SAP=>FALSE
+*      r_container    =
+*      container_name =
+        IMPORTING
+          r_salv_table = gr_alv
+        CHANGING
+          t_table      = gt_data.
+    CATCH cx_salv_msg .
+  ENDTRY.
+
+  IF gr_alv IS NOT INITIAL.
+    CALL METHOD gr_alv->display.
+  ENDIF.
+ENDFORM.                    " SHOW_DATA
