@@ -1,0 +1,110 @@
+*&---------------------------------------------------------------------*
+*& Report  ZY_WAR08_RAPORT_MM_MODIF
+*&
+*&---------------------------------------------------------------------*
+*&
+*&
+*&---------------------------------------------------------------------*
+
+REPORT zy_war08_raport_mm_modif.
+
+TABLES rbkp.
+
+INCLUDE zy_war08_raport_mm_modif_top.
+INCLUDE zy_war08_raport_mm_modif_ss.
+INCLUDE zy_war08_raport_mm_modif_f01.
+
+START-OF-SELECTION.
+  PERFORM get_data.
+
+END-OF-SELECTION.
+  IF gt_rbkp IS NOT INITIAL.
+    PERFORM show_data.
+  ELSE.
+    MESSAGE 'Brak danych dla podanych parametrów wyboru' TYPE 'I'.
+  ENDIF.
+
+*&---------------------------------------------------------------------*
+*&  Include           ZY_WAR08_RAPORT_MM_MODIF_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Form  GET_DATA
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM get_data .
+  IF c_adva IS INITIAL.
+    SELECT * FROM rbkp INTO CORRESPONDING FIELDS OF TABLE gt_rbkp
+      WHERE bukrs EQ p_bukrs
+        AND belnr IN s_belnr.
+  ELSE.
+    SELECT * FROM rbkp INTO CORRESPONDING FIELDS OF TABLE gt_rbkp
+      WHERE bukrs EQ p_bukrs
+        AND belnr IN s_belnr
+        AND blart IN s_blart
+        AND budat IN s_budat.
+  ENDIF.
+ENDFORM.                    " GET_DATA
+*&---------------------------------------------------------------------*
+*&      Form  SHOW_DATA
+*&---------------------------------------------------------------------*
+*       text
+*----------------------------------------------------------------------*
+*  -->  p1        text
+*  <--  p2        text
+*----------------------------------------------------------------------*
+FORM show_data .
+  TRY.
+      CALL METHOD cl_salv_table=>factory
+        IMPORTING
+          r_salv_table = gr_alv
+        CHANGING
+          t_table      = gt_rbkp.
+    CATCH cx_salv_msg .
+  ENDTRY.
+
+  IF gr_alv IS NOT INITIAL.
+    CALL METHOD gr_alv->display.
+  ENDIF.
+ENDFORM.                    " SHOW_DATA
+
+*&---------------------------------------------------------------------*
+*&  Include           ZY_WAR08_RAPORT_MM_MODIF_SS
+*&---------------------------------------------------------------------*
+
+SELECTION-SCREEN BEGIN OF BLOCK b01 WITH FRAME TITLE text-001.
+PARAMETERS p_bukrs LIKE rbkp-bukrs OBLIGATORY.
+SELECT-OPTIONS s_belnr FOR rbkp-belnr.
+PARAMETERS c_adva AS CHECKBOX USER-COMMAND uc1.
+SELECTION-SCREEN END OF BLOCK b01.
+
+SELECTION-SCREEN BEGIN OF BLOCK b02 WITH FRAME TITLE text-002.
+SELECT-OPTIONS: s_blart FOR rbkp-blart MODIF ID id1,
+                s_budat FOR rbkp-budat MODIF ID id1.
+SELECTION-SCREEN END OF BLOCK b02.
+
+INITIALIZATION.
+  MOVE 1000 TO p_bukrs.
+
+AT SELECTION-SCREEN OUTPUT.
+  LOOP AT SCREEN.
+    IF screen-group1 EQ 'ID1'.
+      IF c_adva EQ 'X'.
+        screen-active = 1.
+      ELSE.
+        screen-active = 0.
+      ENDIF.
+      MODIFY SCREEN.
+    ENDIF.
+  ENDLOOP.
+
+*&---------------------------------------------------------------------*
+*&  Include           ZY_WAR08_RAPORT_MM_MODIF_TOP
+*&---------------------------------------------------------------------*
+
+data:
+      gt_rbkp type standard table of zsnh_mm_structure_new,
+      gr_alv type ref to cl_salv_table.
