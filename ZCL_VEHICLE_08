@@ -1,0 +1,97 @@
+class ZCL_VEHICLE_08 definition
+  public
+  create public .
+
+public section.
+
+  interfaces ZIF_STATUS_08 .
+
+  aliases DISPLAY
+    for ZIF_STATUS_08~DISPLAY .
+
+  class-data OBJECT_COUNT type I .
+
+  methods CONSTRUCTOR .
+  methods SPEED_UP
+    importing
+      !IV_STEP type I
+    raising
+      ZCX_OVERHEATING_08 .
+  methods STOP .
+  methods DISPLAY_OLD .
+protected section.
+
+  data SPEED type I value 0. "#EC NOTEXT . " .
+  data MAX_SPEED type I value 140. "#EC NOTEXT . " .
+  data ID type I .
+private section.
+ENDCLASS.
+
+
+
+CLASS ZCL_VEHICLE_08 IMPLEMENTATION.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_VEHICLE_08->CONSTRUCTOR
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD constructor.
+
+    object_count = object_count + 1.
+
+    id = object_count.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_VEHICLE_08->DISPLAY_OLD
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD DISPLAY_OLD.
+
+    MESSAGE i001 WITH id speed max_speed.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_VEHICLE_08->SPEED_UP
+* +-------------------------------------------------------------------------------------------------+
+* | [--->] IV_STEP                        TYPE        I
+* | [!CX!] ZCX_OVERHEATING_08
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD speed_up.
+
+    speed = speed + iv_step.
+
+    IF speed GT max_speed.
+      speed = max_speed.
+      RAISE EXCEPTION TYPE zcx_overheating_08.
+    ENDIF.
+
+  ENDMETHOD.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_VEHICLE_08->STOP
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  method STOP.
+
+    speed = 0.
+
+  endmethod.
+
+
+* <SIGNATURE>---------------------------------------------------------------------------------------+
+* | Instance Public Method ZCL_VEHICLE_08->ZIF_STATUS_08~DISPLAY
+* +-------------------------------------------------------------------------------------------------+
+* +--------------------------------------------------------------------------------------</SIGNATURE>
+  METHOD zif_status_08~display.
+
+    MESSAGE i001 WITH id speed max_speed.
+
+  ENDMETHOD.
+ENDCLASS.
